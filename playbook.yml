@@ -33,7 +33,7 @@
   tasks:
     - name: create sec group
       amazon.aws.ec2_group: 
-        name: "{{jenkins_secgrp}}"
+        name: "{{security_group}}"
         region: "{{region}}"
         rules:
           - proto: tcp
