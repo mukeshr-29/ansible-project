@@ -1,0 +1,80 @@
+---
+- name: provisioning new ec2 & sec grp
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+  pre_tasks:
+    - name: Gather facts
+      setup:
+
+    - name: print python version
+      debug:
+        msg: "using Python {{ansible_python_version}}"
+
+    - name: install dependencies
+      shell: "/usr/bin/python3.10 -m pip install {{item}}"
+      loop:
+        - boto3
+        - botocore
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.10
+    keypair: tommy2
+    instance_type: t2.micro
+    image_id: ami-0c7217cdde317cfec
+    wait: yes
+    group: webserver
+    count: 1
+    region: us-east-1
+    security_group: jenkins_secgrp
+    tag_name: 
+      name: Jen-ans
+
+  tasks:
+    - name: create sec group
+      amazon.aws.ec2_group: 
+        name: "{{jenkins_secgrp}}"
+        region: "{{region}}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 8080
+            to_port: 8080
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 3000
+            to_port: 3000
+            cidr_ip: 0.0.0.0/0
+        
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+      register: basic_firewall
+
+    - name: launch new ec2 instance
+      amazon.aws.ec2_instance:
+        security_group: "{{security_group}}"
+        instance_type: "{{instance_type}}"
+        image_id: "{{image_id}}"
+        wait: "{{wait}}"
+        key_name: "{{keypair}}"
+        region: "{{region}}"
+        count: "{{count}}"
+        tags: "{{tag_name}}"
+        user_data: |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install docker.io -y
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          sudo docker run -d --name 2048 -p 3000:3000 mukeshr29/number-game
+      register: ec2
+
+
