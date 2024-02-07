@@ -16,7 +16,7 @@ pipeline{
         }
         stage('trivy filescan'){
             steps{
-                trivy fs .
+                sh 'trivy fs .'
             }
         }
         stage('ansible provisioning'){
