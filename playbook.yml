@@ -34,6 +34,7 @@
     - name: create sec group
       amazon.aws.ec2_group: 
         name: "{{security_group}}"
+        description: security group for jenkins server
         region: "{{region}}"
         rules:
           - proto: tcp
